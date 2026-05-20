@@ -142,6 +142,10 @@ func NewManager() (engines.DBManager, error) {
 		Username:  redisUser,
 		EnableTLS: viper.GetBool("TLS_ENABLED"),
 	}
+	if viper.IsSet("REDIS_DIAL_TIMEOUT") {
+		dialTimeout := viper.GetInt("REDIS_DIAL_TIMEOUT")
+		defaultSettings.DialTimeout = Duration(time.Duration(dialTimeout) * time.Second)
+	}
 	mgr.client, mgr.clientSettings, err = ParseClientFromProperties(properties, defaultSettings)
 	if err != nil {
 		return nil, err
