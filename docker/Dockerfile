@@ -11,7 +11,7 @@
 #TARGETARCH - Architecture from --platform, e.g. arm64
 #TARGETVARIANT - used to set target ARM variant, e.g. v7
 
-ARG GO_VERSION=1.23.10-alpine
+ARG GO_VERSION=1.25-alpine
                                                                                 
 FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION} as builder
 
@@ -41,6 +41,16 @@ RUN --mount=type=bind,target=. \
 FROM docker.io/alpine:3.22 as dist
 ARG APK_MIRROR
 
+# Pull latest patched packages to pick up fixes for known CVEs in the base image
+# (libcrypto3/libssl3/musl/musl-utils/zlib) without waiting for a new Alpine point release.
+RUN apk update && apk upgrade --no-cache
+
 COPY --from=builder /out/dbctl /bin
+
+# KubeBlocks ComponentDefinitions (e.g. addons/redis) run a hard-coded init container
+# `cp -r /bin/dbctl /config /tools/` against this image, so /config must exist even
+# though dbctl's own build doesn't produce it (legacy probe/binding config, static YAML
+# only, vendored from the previously published image — see docker/config/).
+COPY docker/config /config
 
 USER 65532:65532

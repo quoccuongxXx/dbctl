@@ -39,6 +39,11 @@ var opts = kzap.Options{
 	Development: true,
 }
 
+// configDir is unused by current dbctl logic, but the flag must stay registered:
+// KubeBlocks ComponentDefinitions (e.g. addons/redis) hard-code `dbctl --config-path ...`
+// on the CLI invocation, and cobra errors out with "unknown flag" if it's not declared.
+var configDir string
+
 var RootCmd = &cobra.Command{
 	Use:   "dbctl",
 	Short: "dbctl command line interface",
@@ -114,6 +119,7 @@ func init() {
 	klog.InitFlags(flag.CommandLine)
 	opts.BindFlags(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	RootCmd.PersistentFlags().StringVar(&configDir, "config-path", "/tools/config/dbctl/components/", "dbctl default config directory for builtin type")
 	err := viper.BindPFlags(pflag.CommandLine)
 	if err != nil {
 		panic(errors.Wrap(err, "fatal error viper bindPFlags"))
